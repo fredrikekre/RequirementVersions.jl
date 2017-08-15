@@ -1,5 +1,7 @@
 module RequirementVersions
 
+include("pin.jl")
+
 extract_requirements(args...) = begin
     path = joinpath(args...)
     if ispath(path)
@@ -42,7 +44,7 @@ minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begi
 
         while length(versions) > 1
             try
-                Pkg.pin(requirement, versions[end - 1])
+                my_pin(requirement, versions[end - 1], should_resolve = false)
                 Pkg.test(package_name)
                 pop!(versions)
             catch
@@ -50,7 +52,7 @@ minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begi
             end
         end
         last_version = last(versions)
-        Pkg.pin(requirement, last_version)
+        my_pin(requirement, last_version, should_resolve = false)
         last_version
     end
     Pkg.free.(requirements)
