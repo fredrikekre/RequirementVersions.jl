@@ -23,7 +23,8 @@ with versions greater or equal will also work.
 
 ```jldoctest
 julia> using RequirementVersions
-
+Pkg.free("Query")
+minimum_requirement_versions("LazyQuery")
 julia> minimum_requirement_versions("ChainRecursive") ==
             Dict("Documenter" => v"0.8.5", "NumberedLines" => v"0.0.2", "MacroTools" => v"0.3.1")
 true
@@ -45,7 +46,9 @@ minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begi
 
         while length(versions) > 1
             try
-                my_pin(requirement, versions[end - 1], should_resolve = false)
+                previous_version = versions[end - 1]
+                println("Downgrading to $requirement $previous_version")
+                my_pin(requirement, previous_version, should_resolve = false)
                 my_test(package_name, should_resolve = false)
                 pop!(versions)
             catch
