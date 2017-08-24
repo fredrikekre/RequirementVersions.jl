@@ -32,10 +32,7 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips 
     ), union(skips, ["julia"]))
 
     version_numbers = map(requirements) do requirement
-        versions = VersionNumber.(
-            joinpath(package_directory, requirement) |>
-            LibGit2.GitRepo |>
-            LibGit2.tag_list)
+        versions = sort(collect(keys(Pkg.Read.available(requirement))))
 
         while length(versions) > 1
             try
