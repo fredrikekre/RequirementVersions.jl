@@ -24,9 +24,8 @@ with versions greater or equal will also work.
 ```jldoctest
 julia> using RequirementVersions
 
-julia> minimum_requirement_versions("ChainRecursive", skips = ["Documenter", "MacroTools"]) ==
-            Dict("NumberedLines" => v"0.0.2")
-true
+julia> Test.@test minimum_requirement_versions("ChainRecursive", skips = ["Documenter", "MacroTools"]) ==
+            Dict("NumberedLines" => v"0.0.2");
 ```
 """
 minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[]) = begin
