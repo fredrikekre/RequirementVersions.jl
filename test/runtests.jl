@@ -12,3 +12,6 @@ Documenter.makedocs(
     checkdocs = :exports,
     authors = "Brandon Taylor"
 )
+
+Test.@test minimum_requirement_versions("MacroTools") ==
+           Dict("Compat" => v"0.9.5");

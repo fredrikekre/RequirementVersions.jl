@@ -13,20 +13,13 @@ end
 
 export minimum_requirement_versions
 """
-    minimum_requirement_versions(package_name, package_directory = Pkg.dir())
+    minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[])
 
 Automatically finds the minimum versions of required packages that will still
-allow your tests to pass.
+allow your tests to pass. List any packages you want to skip in `skips`.
 
 Makes the assumption that if a certain profile of versions work, all profiles
 with versions greater or equal will also work.
-
-```jldoctest
-julia> using RequirementVersions
-
-julia> Test.@test minimum_requirement_versions("ChainRecursive", skips = ["Documenter", "MacroTools"]) ==
-            Dict("NumberedLines" => v"0.0.2");
-```
 """
 minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[]) = begin
     package_file = joinpath(package_directory, package_name)
