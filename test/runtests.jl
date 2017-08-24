@@ -13,7 +13,13 @@ Documenter.makedocs(
     authors = "Brandon Taylor"
 )
 
-Test.@test minimum_requirement_versions("SimpleTraits", skips = ["Compat"]) ==
-           Dict("MacroTools" => v"0.3.1");
+predicted =
+    minimum_requirement_versions("SimpleTraits", skips = ["Compat"])["MacroTools"]
+actual =
+    if VERSION < v"0.7.0-"
+        v"0.3.1"
+    else
+        v"0.3.7"
+    end
 
-Test.@test_throws ErrorException minimum_requirement_versions("FakePackage")
+Test.@test predicted == actual
