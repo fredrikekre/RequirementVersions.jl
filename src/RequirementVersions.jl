@@ -23,11 +23,13 @@ with versions greater or equal will also work.
 """
 minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[]) = begin
     package_file = joinpath(package_directory, package_name)
+    if !ispath(package_file)
+        error("Can't find package $package_file")
+    end
     requirements = setdiff(union(
         extract_requirements(package_file, "REQUIRE"),
         extract_requirements(package_file, "test", "REQUIRE")
     ), union(skips, ["julia"]))
-    requirement = first(requirements)
 
     version_numbers = map(requirements) do requirement
         versions = VersionNumber.(
