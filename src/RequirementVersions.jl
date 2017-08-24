@@ -32,8 +32,7 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips 
     ), union(skips, ["julia"]))
 
     version_numbers = map(requirements) do requirement
-        versions = sort(collect(keys(Pkg.available(requirement))))
-
+        versions = Pkg.available(requirement)
         while length(versions) > 1
             try
                 previous_version = versions[end - 1]
