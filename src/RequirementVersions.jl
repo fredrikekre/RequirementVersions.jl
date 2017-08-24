@@ -24,17 +24,17 @@ with versions greater or equal will also work.
 ```jldoctest
 julia> using RequirementVersions
 
-julia> minimum_requirement_versions("ChainRecursive") ==
-            Dict("Documenter" => v"0.8.5", "NumberedLines" => v"0.0.2", "MacroTools" => v"0.3.1")
+julia> minimum_requirement_versions("ChainRecursive", skips = ["Documenter", "MacroTools"]) ==
+            Dict("NumberedLines" => v"0.0.2")
 true
 ```
 """
-minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begin
+minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[]) = begin
     package_file = joinpath(package_directory, package_name)
     requirements = setdiff(union(
         extract_requirements(package_file, "REQUIRE"),
         extract_requirements(package_file, "test", "REQUIRE")
-    ), ["julia"])
+    ), union(skips, ["julia"]))
     requirement = first(requirements)
 
     version_numbers = map(requirements) do requirement
@@ -46,7 +46,7 @@ minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begi
         while length(versions) > 1
             try
                 previous_version = versions[end - 1]
-                println("Downgrading to $requirement $previous_version")
+                info("Downgrading to $requirement $previous_version")
                 my_pin(requirement, previous_version, should_resolve = false)
                 my_test(package_name, should_resolve = false)
                 pop!(versions)
