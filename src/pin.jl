@@ -48,7 +48,8 @@ function entry_pin(pkg::AbstractString, head::AbstractString; should_resolve = t
     should_resolve && resolve()
     nothing
 end
-entry_pin(pkg::AbstractString; should_resolve = true) = entry_pin(pkg, "", should_resolve = should_resolve)
+entry_pin(pkg::AbstractString; should_resolve = true) =
+    entry_pin(pkg, "", should_resolve = should_resolve)
 
 function entry_pin(pkg::AbstractString, ver::VersionNumber; should_resolve = true)
     ispath(pkg,".git") || throw(Pkg.PkgError("$pkg is not a git repo"))
@@ -59,11 +60,93 @@ function entry_pin(pkg::AbstractString, ver::VersionNumber; should_resolve = tru
     entry_pin(pkg, avail[ver].sha1, should_resolve = should_resolve)
 end
 
-my_pin(pkg::AbstractString; should_resolve = true) = Pkg.cd(Pkg.splitjl(pkg)) do splitpkg
-    entry_pin(splitpkg, should_resolve = should_resolve)
-end
-
-
 my_pin(pkg::AbstractString, ver::VersionNumber; should_resolve = true) =  Pkg.cd(Pkg.splitjl(pkg)) do splitpkg
     entry_pin(splitpkg, ver, should_resolve = should_resolve)
 end
+
+
+function test!(pkg::AbstractString,
+               errs::Vector{AbstractString},
+               nopkgs::Vector{AbstractString},
+               notests::Vector{AbstractString};
+               coverage::Bool=false, should_resolve = true)
+    reqs_path = abspath(pkg,"test","REQUIRE")
+    if should_resolve && Pkg.Reqs.isfile(reqs_path)
+        tests_require = Pkg.Reqs.parse(reqs_path)
+        if (!isempty(tests_require))
+            info("Computing test dependencies for $pkg...")
+            Pkg.resolve(merge(Pkg.Reqs.parse("REQUIRE"), tests_require))
+        end
+    end
+    test_path = abspath(pkg,"test","runtests.jl")
+    if !isdir(pkg)
+        push!(nopkgs, pkg)
+    elseif !isfile(test_path)
+        push!(notests, pkg)
+    else
+        info("Testing $pkg")
+        Pkg.cd(dirname(test_path)) do path
+            try
+                if VERSION > v"0.6"
+                    cmd = ```
+                        $(Base.julia_cmd())
+                        --code-coverage=$(coverage ? "user" : "none")
+                        --color=$(Base.have_color ? "yes" : "no")
+                        --compilecache=$(Bool(Base.JLOptions().use_compilecache) ? "yes" : "no")
+                        --check-bounds=yes
+                        --warn-overwrite=yes
+                        --startup-file=$(Base.JLOptions().startupfile != 2 ? "yes" : "no")
+                        $test_path
+                        ```
+                    run(cmd)
+                else
+                    color = Base.have_color? "--color=yes" : "--color=no"
+                    codecov = coverage? ["--code-coverage=user"] : ["--code-coverage=none"]
+                    compilecache = "--compilecache=" * (Bool(Base.JLOptions().use_compilecache) ? "yes" : "no")
+                    julia_exe = Base.julia_cmd()
+                    run(`$julia_exe --check-bounds=yes $codecov $color $compilecache $test_path`)
+                end
+                info("$pkg tests passed")
+            catch err
+                Pkg.Entry.warnbanner(err, label="[ ERROR: $pkg ]")
+                push!(errs,pkg)
+            end
+        end
+    end
+end
+
+function entry_test(pkgs::Vector{AbstractString};
+    coverage::Bool = false, should_resolve = true)
+    errs = AbstractString[]
+    nopkgs = AbstractString[]
+    notests = AbstractString[]
+    for pkg in pkgs
+        test!(pkg, errs, nopkgs, notests;
+            coverage = coverage, should_resolve = should_resolve)
+    end
+    if !all(isempty, (errs, nopkgs, notests))
+        messages = AbstractString[]
+        if !isempty(errs)
+            push!(messages, "$(join(errs,", "," and ")) had test errors")
+        end
+        if !isempty(nopkgs)
+            msg = length(nopkgs) > 1 ? " are not installed packages" :
+                                       " is not an installed package"
+            push!(messages, string(join(nopkgs,", ", " and "), msg))
+        end
+        if !isempty(notests)
+            push!(messages, "$(join(notests,", "," and ")) did not provide a test/runtests.jl file")
+        end
+        throw(Pkg.Entry.PkgTestError(join(messages, "and")))
+    end
+end
+
+entry_test(; coverage::Bool = false, should_resolve = true) = entry_test(sort!(AbstractString[keys(Pkg.installed())...]);
+    coverage = coverage, should_resolve = shoulve_resolve)
+
+my_test(; coverage::Bool = false, should_resolve = true) =
+    Pkg.cd(entry_test; coverage = coverage, should_resolve = should_resolve)
+
+my_test(pkgs::AbstractString...; coverage::Bool = false, should_resolve = true) =
+    Pkg.cd(entry_test, AbstractString[Pkg.splitjl.(pkgs)...];
+        coverage = coverage, should_resolve = should_resolve)

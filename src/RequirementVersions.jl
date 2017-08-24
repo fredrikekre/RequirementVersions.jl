@@ -35,6 +35,7 @@ minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begi
         extract_requirements(package_file, "REQUIRE"),
         extract_requirements(package_file, "test", "REQUIRE")
     ), ["julia"])
+    requirement = first(requirements)
 
     version_numbers = map(requirements) do requirement
         versions = VersionNumber.(
@@ -45,7 +46,7 @@ minimum_requirement_versions(package_name, package_directory = Pkg.dir()) = begi
         while length(versions) > 1
             try
                 my_pin(requirement, versions[end - 1], should_resolve = false)
-                Pkg.test(package_name)
+                my_test(package_name, should_resolve = false)
                 pop!(versions)
             catch
                 break
