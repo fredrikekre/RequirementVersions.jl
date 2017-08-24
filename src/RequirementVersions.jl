@@ -23,8 +23,7 @@ with versions greater or equal will also work.
 
 ```jldoctest
 julia> using RequirementVersions
-Pkg.free("Query")
-minimum_requirement_versions("LazyQuery")
+
 julia> minimum_requirement_versions("ChainRecursive") ==
             Dict("Documenter" => v"0.8.5", "NumberedLines" => v"0.0.2", "MacroTools" => v"0.3.1")
 true
