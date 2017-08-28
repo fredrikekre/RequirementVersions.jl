@@ -87,7 +87,7 @@ function test!(pkg::AbstractString,
         info("Testing $pkg")
         Pkg.cd(dirname(test_path)) do path
             try
-                if VERSION > v"0.6"
+                if VERSION >= v"0.7.0-DEV.1335"
                     cmd = ```
                         $(Base.julia_cmd())
                         --code-coverage=$(coverage ? "user" : "none")
