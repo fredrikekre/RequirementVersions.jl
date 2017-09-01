@@ -2,8 +2,6 @@ module RequirementVersions
 
 include("pin.jl")
 
-package_name = "ChainRecursive"
-
 extract_requirements(args...) = begin
     path = joinpath(args...)
     if ispath(path)
@@ -64,7 +62,6 @@ Restore all the files in the archive to your package directory.
 """
 restore(archive, package_directory = Pkg.dir()) = begin
     foreach(readdir(archive)) do file
-        dest = joinpath(package_directory, file)
         cp(joinpath(archive, file), joinpath(package_directory, file), remove_destination = true)
     end
     rm(archive, recursive = true)
