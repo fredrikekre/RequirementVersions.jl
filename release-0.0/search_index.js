@@ -17,6 +17,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#RequirementVersions.restore",
+    "page": "Home",
+    "title": "RequirementVersions.restore",
+    "category": "Function",
+    "text": "restore(archive, package_directory = Pkg.dir())\n\nRestore all the files in the archive to your package directory.\n\n\n\n"
+},
+
+{
     "location": "index.html#RequirementVersions.jl-1",
     "page": "Home",
     "title": "RequirementVersions.jl",
