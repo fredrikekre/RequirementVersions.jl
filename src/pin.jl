@@ -45,7 +45,7 @@ function entry_pin(pkg::AbstractString, head::AbstractString; should_resolve = t
             close(commit)
         end
     end
-    should_resolve && resolve()
+    should_resolve && Pkg.resolve()
     nothing
 end
 entry_pin(pkg::AbstractString; should_resolve = true) =
@@ -142,7 +142,7 @@ function entry_test(pkgs::Vector{AbstractString};
 end
 
 entry_test(; coverage::Bool = false, should_resolve = true) = entry_test(sort!(AbstractString[keys(Pkg.installed())...]);
-    coverage = coverage, should_resolve = shoulve_resolve)
+    coverage = coverage, should_resolve = should_resolve)
 
 my_test(; coverage::Bool = false, should_resolve = true) =
     Pkg.cd(entry_test; coverage = coverage, should_resolve = should_resolve)

@@ -13,15 +13,16 @@ end
 
 export minimum_requirement_versions
 """
-    minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[])
+    minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should_resolve = true, skips = String[])
 
 Automatically finds the minimum versions of required packages that will still
 allow your tests to pass. List any packages you want to skip in `skips`.
+Set `should_resolve` to `false` to prevent `Pkg.pin` and `Pkg.test` from running `Pkg.resolve()`.
 
 Makes the assumption that if a certain profile of versions work, all profiles
 with versions greater or equal will also work.
 """
-minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips = String[]) = begin
+minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should_resolve = true, skips = String[]) = begin
     package_file = joinpath(package_directory, package_name)
     if !ispath(package_file)
         error("Can't find package $package_file")
@@ -40,15 +41,21 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), skips 
             try
                 previous_version = versions[end - 1]
                 info("Downgrading to $requirement $previous_version")
-                my_pin(requirement, previous_version, should_resolve = false)
-                my_test(package_name, should_resolve = false, coverage = false)
+                my_pin(requirement, previous_version, should_resolve = should_resolve)
+                my_test(package_name, should_resolve = should_resolve, coverage = false)
                 pop!(versions)
-            catch
+            catch err
+                warn(err)
                 break
             end
         end
         last_version = last(versions)
-        my_pin(requirement, last_version, should_resolve = false)
+        if should_resolve
+            cp(joinpath(archive, requirement), joinpath(package_directory, requirement), remove_destination = true)
+            Pkg.resolve()
+        else
+            my_pin(requirement, last_version, should_resolve = should_resolve)
+        end
         last_version
     end
     restore(archive, package_directory)
