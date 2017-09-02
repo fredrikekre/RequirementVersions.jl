@@ -31,12 +31,29 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should
         extract_requirements(package_file, "REQUIRE"),
         extract_requirements(package_file, "test", "REQUIRE")
     ), union(skips, ["julia"]))
+    reqbounds = Pkg.Reqs.parse(joinpath(package_file, "REQUIRE"))
     archive = mktempdir(package_directory)
     info("Making archive folder $archive to archive your pacakges. If anything goes wrong please run `restore($archive)`")
     version_numbers = map(requirements) do requirement
         info("Archiving $requirement")
         cp_withperms(joinpath(package_directory, requirement), joinpath(archive, requirement))
         versions = Pkg.available(requirement)
+        # start by testing at existing lower bound from REQUIRE file, if present
+        if requirement in keys(reqbounds)
+            lowerbound = reqbounds[requirement].intervals[1].lower
+            if lowerbound in versions
+                try
+                    info("Downgrading to $requirement $lowerbound")
+                    my_pin(requirement, lowerbound, should_resolve = should_resolve)
+                    my_test(package_name, should_resolve = should_resolve, coverage = false)
+                    # if tests pass at existing lower bound, skip testing all higher versions
+                    filter!(v -> v <= lowerbound, versions)
+                catch err
+                    warn("$package_name fails tests at existing lower bound of $requirement $lowerbound")
+                    warn(err)
+                end
+            end
+        end
         while length(versions) > 1
             try
                 previous_version = versions[end - 1]
