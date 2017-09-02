@@ -35,7 +35,7 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should
     info("Making archive folder $archive to archive your pacakges. If anything goes wrong please run `restore($archive)`")
     version_numbers = map(requirements) do requirement
         info("Archiving $requirement")
-        cp(joinpath(package_directory, requirement), joinpath(archive, requirement))
+        cp_withperms(joinpath(package_directory, requirement), joinpath(archive, requirement))
         versions = Pkg.available(requirement)
         while length(versions) > 1
             try
@@ -51,7 +51,7 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should
         end
         last_version = last(versions)
         if should_resolve
-            cp(joinpath(archive, requirement), joinpath(package_directory, requirement), remove_destination = true)
+            cp_withperms(joinpath(archive, requirement), joinpath(package_directory, requirement), remove_destination = true)
             Pkg.resolve()
         else
             my_pin(requirement, last_version, should_resolve = should_resolve)
@@ -69,9 +69,36 @@ Restore all the files in the archive to your package directory.
 """
 restore(archive, package_directory = Pkg.dir()) = begin
     foreach(readdir(archive)) do file
-        cp(joinpath(archive, file), joinpath(package_directory, file), remove_destination = true)
+        cp_withperms(joinpath(archive, file), joinpath(package_directory, file), remove_destination = true)
     end
     rm(archive, recursive = true)
+end
+
+"""
+    cp_withperms(src, dest; remove_destination = false)
+
+Copy `src` to `dest`, preserving permissions
+"""
+cp_withperms(src, dest; remove_destination = false) = begin
+    cp(src, dest; remove_destination = remove_destination)
+    is_unix() && fix_perms(src, dest)
+end
+
+"""
+   fix_perms(src, dest)
+
+Ensure `dest` has same permissions as `src`
+"""
+fix_perms(src, dest) = begin
+    if isdir(dest)
+        foreach(readdir(dest)) do file
+            fix_perms(joinpath(src, file), joinpath(dest, file))
+        end
+    else
+        if filemode(src) != filemode(dest)
+            chmod(dest, filemode(src))
+        end
+    end
 end
 
 end
