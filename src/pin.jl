@@ -75,7 +75,7 @@ function test!(pkg::AbstractString,
         tests_require = Pkg.Reqs.parse(reqs_path)
         if (!isempty(tests_require))
             info("Computing test dependencies for $pkg...")
-            Pkg.resolve(merge(Pkg.Reqs.parse("REQUIRE"), tests_require))
+            Pkg.Entry.resolve(merge(Pkg.Reqs.parse("REQUIRE"), tests_require))
         end
     end
     test_path = abspath(pkg,"test","runtests.jl")

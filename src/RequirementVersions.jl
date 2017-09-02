@@ -34,6 +34,11 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should
     reqbounds = Pkg.Reqs.parse(joinpath(package_file, "REQUIRE"))
     archive = mktempdir(package_directory)
     info("Making archive folder $archive to archive your pacakges. If anything goes wrong please run `restore($archive)`")
+    if should_resolve # prevent resolve from changing the package-under-test
+        info("Archiving $package_name")
+        cp_withperms(package_file, joinpath(archive, package_name))
+        Pkg.pin(package_name)
+    end
     version_numbers = map(requirements) do requirement
         info("Archiving $requirement")
         cp_withperms(joinpath(package_directory, requirement), joinpath(archive, requirement))
