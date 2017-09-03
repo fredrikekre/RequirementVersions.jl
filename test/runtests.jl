@@ -16,7 +16,9 @@ Documenter.makedocs(
 predicted =
     minimum_requirement_versions("SimpleTraits", skips = ["Compat"])["MacroTools"]
 actual =
-    if VERSION < v"0.7.0-"
+    if VERSION < v"0.6.0-"
+        v"0.2.1"
+    elseif VERSION < v"0.7.0-"
         v"0.3.1"
     else
         v"0.3.7"

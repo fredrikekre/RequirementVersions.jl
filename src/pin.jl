@@ -60,8 +60,14 @@ function entry_pin(pkg::AbstractString, ver::VersionNumber; should_resolve = tru
     entry_pin(pkg, avail[ver].sha1, should_resolve = should_resolve)
 end
 
-my_pin(pkg::AbstractString, ver::VersionNumber; should_resolve = true) =  Pkg.cd(Pkg.splitjl(pkg)) do splitpkg
-    entry_pin(splitpkg, ver, should_resolve = should_resolve)
+splitjl(pkg) = isdefined(Pkg, :splitjl) ? Pkg.splitjl(pkg) : endswith(pkg, ".jl") ? pkg[1:(end-3)] : pkg
+
+my_pin(pkg::AbstractString, ver::VersionNumber; should_resolve = true) = Pkg.cd(splitjl(pkg)) do splitpkg
+    if should_resolve
+        Pkg.pin(splitpkg, ver)
+    else
+        entry_pin(splitpkg, ver, should_resolve = should_resolve)
+    end
 end
 
 
@@ -148,5 +154,6 @@ my_test(; coverage::Bool = false, should_resolve = true) =
     Pkg.cd(entry_test; coverage = coverage, should_resolve = should_resolve)
 
 my_test(pkgs::AbstractString...; coverage::Bool = false, should_resolve = true) =
-    Pkg.cd(entry_test, AbstractString[Pkg.splitjl.(pkgs)...];
+    should_resolve ? Pkg.test(pkgs...; coverage = coverage) :
+    Pkg.cd(entry_test, AbstractString[splitjl.(pkgs)...];
         coverage = coverage, should_resolve = should_resolve)
