@@ -31,21 +31,21 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should
         extract_requirements(package_file, "REQUIRE"),
         extract_requirements(package_file, "test", "REQUIRE")
     ), union(skips, ["julia"]))
-    reqbounds = Pkg.Reqs.parse(joinpath(package_file, "REQUIRE"))
+    requirement_bounds = Pkg.Reqs.parse(joinpath(package_file, "REQUIRE"))
     archive = mktempdir(package_directory)
     info("Making archive folder $archive to archive your pacakges. If anything goes wrong please run `restore($archive)`")
     if should_resolve # prevent resolve from changing the package-under-test
         info("Archiving $package_name")
-        cp_withperms(package_file, joinpath(archive, package_name))
+        copy_with_permissions(package_file, joinpath(archive, package_name))
         Pkg.pin(package_name)
     end
     version_numbers = map(requirements) do requirement
         info("Archiving $requirement")
-        cp_withperms(joinpath(package_directory, requirement), joinpath(archive, requirement))
+        copy_with_permissions(joinpath(package_directory, requirement), joinpath(archive, requirement))
         versions = Pkg.available(requirement)
         # start by testing at existing lower bound from REQUIRE file, if present
-        if requirement in keys(reqbounds)
-            lowerbound = reqbounds[requirement].intervals[1].lower
+        if requirement in keys(requirement_bounds)
+            lowerbound = requirement_bounds[requirement].intervals[1].lower
             if lowerbound in versions
                 try
                     info("Downgrading to $requirement $lowerbound")
@@ -73,7 +73,7 @@ minimum_requirement_versions(package_name; package_directory = Pkg.dir(), should
         end
         last_version = last(versions)
         if should_resolve
-            cp_withperms(joinpath(archive, requirement), joinpath(package_directory, requirement), remove_destination = true)
+            copy_with_permissions(joinpath(archive, requirement), joinpath(package_directory, requirement), remove_destination = true)
             Pkg.resolve()
         else
             my_pin(requirement, last_version, should_resolve = should_resolve)
@@ -91,34 +91,36 @@ Restore all the files in the archive to your package directory.
 """
 restore(archive, package_directory = Pkg.dir()) = begin
     foreach(readdir(archive)) do file
-        cp_withperms(joinpath(archive, file), joinpath(package_directory, file), remove_destination = true)
+        copy_with_permissions(joinpath(archive, file), joinpath(package_directory, file), remove_destination = true)
     end
     rm(archive, recursive = true)
 end
 
 """
-    cp_withperms(src, dest; remove_destination = false)
+    copy_with_permissions(source, destination; remove_destination = false)
 
-Copy `src` to `dest`, preserving permissions
+Copy `source` to `destination`, preserving permissions
 """
-cp_withperms(src, dest; remove_destination = false) = begin
-    cp(src, dest; remove_destination = remove_destination)
-    is_unix() && fix_perms(src, dest)
+copy_with_permissions(source, destination; remove_destination = false) = begin
+    cp(source, destination; remove_destination = remove_destination)
+    if is_unix()
+        fix_permissions(source, destination)
+    end
 end
 
 """
-   fix_perms(src, dest)
+   fix_permissions(source, destination)
 
-Ensure `dest` has same permissions as `src`
+Ensure `destination` has same permissions as `source`
 """
-fix_perms(src, dest) = begin
-    if isdir(dest)
-        foreach(readdir(dest)) do file
-            fix_perms(joinpath(src, file), joinpath(dest, file))
+fix_permissions(source, destination) = begin
+    if isdir(destination)
+        foreach(readdir(destination)) do file
+            fix_permissions(joinpath(source, file), joinpath(destination, file))
         end
     else
-        if filemode(src) != filemode(dest)
-            chmod(dest, filemode(src))
+        if filemode(source) != filemode(destination)
+            chmod(destination, filemode(source))
         end
     end
 end
