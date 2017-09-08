@@ -17,19 +17,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#RequirementVersions.cp_withperms-Tuple{Any,Any}",
+    "location": "index.html#RequirementVersions.copy_with_permissions-Tuple{Any,Any}",
     "page": "Home",
-    "title": "RequirementVersions.cp_withperms",
+    "title": "RequirementVersions.copy_with_permissions",
     "category": "Method",
-    "text": "cp_withperms(src, dest; remove_destination = false)\n\nCopy src to dest, preserving permissions\n\n\n\n"
+    "text": "copy_with_permissions(source, destination; remove_destination = false)\n\nCopy source to destination, preserving permissions\n\n\n\n"
 },
 
 {
-    "location": "index.html#RequirementVersions.fix_perms-Tuple{Any,Any}",
+    "location": "index.html#RequirementVersions.fix_permissions-Tuple{Any,Any}",
     "page": "Home",
-    "title": "RequirementVersions.fix_perms",
+    "title": "RequirementVersions.fix_permissions",
     "category": "Method",
-    "text": "fix_perms(src, dest)\n\nEnsure dest has same permissions as src\n\n\n\n"
+    "text": "fix_permissions(source, destination)\n\nEnsure destination has same permissions as source\n\n\n\n"
 },
 
 {
